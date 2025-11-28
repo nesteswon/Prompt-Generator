@@ -166,7 +166,7 @@ def ask_openai(prompt: str) -> str:
     client = OpenAI(api_key=OPENAI_API_KEY)
 
     response = client.chat.completions.create(
-        model="gpt-4.1-mini",  # 필요하면 gpt-4.1 / gpt-4.1-mini 등으로 변경 가능
+        model = "gpt-5.1",  # 필요하면 gpt-4.1 / gpt-4.1-mini 등으로 변경 가능
         messages=[
             {"role": "system", "content": SYSTEM_INSTRUCTION},
             {"role": "user", "content": prompt},
