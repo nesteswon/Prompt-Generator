@@ -138,8 +138,8 @@ Topic, Action, Background, Camera movement, Style, Composition
 # ==============================================================================
 st.set_page_config(page_title="ComfyUI + Midjourney Prompt Converter (GPT)", layout="wide")
 
-st.title("Flow JSON + Midjourney 프롬프트 변환기 (OpenAI 전용)")
-st.caption("한글 설명 → Flow용 JSON 프롬프트 + 미드저니용 영문 프롬프트 자동 생성")
+st.title("ComfyUI JSON + Midjourney 프롬프트 변환기 (OpenAI 전용)")
+st.caption("한글 설명 → ComfyUI용 JSON 프롬프트 + 미드저니용 영문 프롬프트 자동 생성")
 
 with st.sidebar:
     st.subheader("🔐 API 설정")
@@ -249,3 +249,13 @@ if generate_btn:
 
         except Exception as e:
             st.error(f"실행 중 오류가 발생했습니다: {e}")
+
+st.markdown(
+    """
+    <hr>
+    <p style='text-align:center; color: gray; font-size: 14px;'>
+    © 2025 NICO MORI. All rights reserved.
+    </p>
+    """,
+    unsafe_allow_html=True
+)
