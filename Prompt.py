@@ -150,13 +150,70 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("**사용 모델:** `gpt-4.1-mini` (원하면 코드에서 변경 가능)")
 
-st.markdown("### 1. 프롬프트로 사용할 내용을 한국어로 입력하세요.")
-default_text = "봄, 도쿄, 카페, 20대 여성, 아이돌, 긴머리, 흰티셔츠, 청바지, 스니커즈, 벚꽃나무, 잔잔한 바람, Cannon 5D MARK2, Outfocus"
-user_input = st.text_area(
-    "설명 입력",
-    value=default_text,
-    height=200,
-    placeholder="여기에 인물, 행동, 배경, 분위기 등을 한국어로 자유롭게 적어주세요."
+st.markdown("## 1) 기본 정보")
+
+col1, col2 = st.columns(2)
+with col1:
+    brand = st.text_input("브랜드 / 프로젝트 이름", value="니코모리")
+    prompt_name = st.text_input("프롬프트 이름 (내가 구분용으로 쓸 제목)", value="카페 테라스 작업 씬")
+
+with col2:
+    aspect = st.selectbox("영상 비율 (Aspect Ratio)", ["16:9", "9:16", "1:1", "21:9"], index=0)
+    duration = st.number_input("영상 길이 (초)", min_value=3, max_value=60, value=8)
+
+st.markdown("---")
+st.markdown("## 2) 인물 / 캐릭터 / 액션")
+
+col3, col4 = st.columns(2)
+with col3:
+    subject = st.text_input("주제 / 메인 인물", value="밝게 미소 짓는 20대 한국인 여성")
+    character_detail = st.text_area(
+        "캐릭터 디테일 (외모, 헤어, 의상 등)",
+        height=100,
+        value="긴 생머리, 깔끔한 셔츠와 데님, 자연스러운 메이크업"
+    )
+
+with col4:
+    action = st.text_area(
+        "액션 / 행동 (무엇을 하고 있는지)",
+        height=100,
+        value="카페 테라스에서 노트북으로 작업하며, 가끔 창밖을 보며 미소 짓는다"
+    )
+    emotion = st.text_input("감정 / 분위기", value="집중 + 여유 + 작은 설렘")
+
+st.markdown("---")
+st.markdown("## 3) 배경 / 카메라 / 스타일")
+
+col5, col6 = st.columns(2)
+with col5:
+    background = st.text_area(
+        "배경 / 장소 설명",
+        height=100,
+        value="햇살이 들어오는 도심 카페 테라스, 주변에 화분과 나무, 뒤로 흐릿한 도시 풍경"
+    )
+    lighting = st.text_input("조명 / 분위기", value="golden hour, soft natural light")
+
+with col6:
+    camera_move = st.text_input(
+        "카메라 움직임 / 샷 타입",
+        value="slow dolly-in, medium shot, 약간 높은 앵글"
+    )
+    style = st.text_input(
+        "스타일 (예: 시네마틱, 픽사풍, 사진 스타일 등)",
+        value="cinematic, realistic, soft color grading"
+    )
+    composition = st.text_input(
+        "구도 (예: rule of thirds, center framing 등)",
+        value="rule of thirds, subject slightly off-center"
+    )
+
+st.markdown("---")
+st.markdown("## 4) 추가 메모")
+
+extra = st.text_area(
+    "추가로 반영되면 좋은 요소들 (선택)",
+    height=80,
+    placeholder="예: 손에 머그컵 들고 있음, 바람에 머리카락이 살짝 흩날림, 브랜딩 컬러를 배경에 살짝 반영 등"
 )
 
 generate_btn = st.button("🚀 프롬프트 생성하기")
