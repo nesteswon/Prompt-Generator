@@ -198,37 +198,54 @@ if generate_btn:
                 st.markdown(result_text)
 
             with right:
-                st.markdown("### 🎨 Midjourney 프롬프트 (코드 복사용)")
+    st.markdown("### 🎨 Midjourney 프롬프트 (코드 복사용)")
 
-                # ---------------------------
-                # MJ 프롬프트 추출 로직
-                # ---------------------------
-                marker_1 = "2️⃣ 미드저니"
-                marker_2 = "### 2️⃣ 미드저니"
+    # ---------------------------
+    # MJ 프롬프트 추출 로직 (개선 버전)
+    # ---------------------------
+    full = result_text
 
-                mj_block = None
-                text = result_text
+    # 1) 미드저니 섹션 시작 마커 정의
+    mj_markers = [
+        "2️⃣ 미드저니 사용 프롬프트",
+        "### 2️⃣ 미드저니 사용 프롬프트",
+        "미드저니 사용 프롬프트"
+    ]
 
-                # 시작점 찾기
-                if marker_1 in text:
-                    text = text.split(marker_1, 1)[1]
-                elif marker_2 in text:
-                    text = text.split(marker_2, 1)[1]
+    mj_text = None
 
-                # 종료점 찾기
-                if text != result_text:
-                    for end_marker in ["###", "⚠️", "1️⃣", "3️⃣", "\n### "]:
-                        if end_marker in text:
-                            text = text.split(end_marker, 1)[0]
-                            break
-                    mj_block = text.strip()
+    # 2) 시작 위치 찾기
+    for mk in mj_markers:
+        if mk in full:
+            mj_text = full.split(mk, 1)[1]
+            break
 
-                if mj_block:
-                    cleaned = mj_block.strip("`").strip()
-                    st.code(cleaned, language="text")
-                else:
-                    st.info("미드저니 프롬프트를 찾지 못했습니다.")
-                    st.code(result_text, language="text")
+    # 3) 시작점 못 찾으면 실패 처리
+    if not mj_text:
+        st.info("미드저니 프롬프트를 찾지 못했습니다.")
+        st.code(result_text)
+        return
+
+    # 4) 다음 섹션(###, ⚠️ 등) 전까지만 남기기
+    for end_marker in ["###", "⚠️", "1️⃣", "3️⃣", "\n### "]:
+        if end_marker in mj_text:
+            mj_text = mj_text.split(end_marker, 1)[0]
+            break
+
+    # 5) 제목/마커 제거 + 앞뒤 공백 정리
+    cleaned = mj_text.strip()
+    cleaned = cleaned.strip("`").strip()
+
+    # 🔥 핵심: 첫 줄에 남아있는 '사용 프롬프트' 같은 문구 제거
+    first_line_split = cleaned.splitlines()
+    if len(first_line_split) > 1:
+        # 첫 줄에 제목 비슷한 글자가 있으면 제거
+        if ("프롬프트" in first_line_split[0]) or ("Prompt" in first_line_split[0]):
+            cleaned = "\n".join(first_line_split[1:]).strip()
+
+    # 6) 최종 출력
+    st.code(cleaned, language="text")
+
 
         except Exception as e:
             st.error(f"실행 중 오류가 발생했습니다: {e}")
