@@ -325,6 +325,17 @@ if generate_btn:
 [구도]
 {composition}
 
+[오디오 / 사운드]
+{composition}
+- BGM: {audio_bgm}
+- SFX: {audio_sfx}
+- Voice / Narration: {audio_voice}
+
+[타임라인 / 씬 분할]
+- 요약: {timeline_overview}
+- 상세:
+{timeline_detail}
+
 [추가 메모]
 {extra}
 """.strip()
