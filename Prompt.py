@@ -189,57 +189,46 @@ if generate_btn:
             with st.spinner("OpenAI가 프롬프트를 생성하는 중입니다..."):
                 result_text = ask_openai(user_input)
 
-        st.success("프롬프트 생성 완료!")
+            st.success("프롬프트 생성 완료!")
 
-            # 4) 결과 표시 (왼쪽/오른쪽 나눠서 보기 좋게)
             left, right = st.columns(2)
 
-            # 🔹 왼쪽: 전체 결과 그대로
             with left:
                 st.markdown("### 🧩 전체 결과 (Markdown)")
                 st.markdown(result_text)
 
-            # 🔹 오른쪽: 미드저니 프롬프트만 코드 박스로 추출
-            # -------------------------------------------------
-            # 1) 기준이 되는 제목(마커) 정의
-            marker_1 = "### 2️⃣ 미드저니 사용 프롬프트"
-            marker_2 = "2️⃣ 미드저니 사용 프롬프트"
-
-            mj_block = None
-            text = result_text
-
-            # 2) 미드저니 섹션 시작 위치 찾기
-            if marker_1 in text:
-                text = text.split(marker_1, 1)[1]
-            elif marker_2 in text:
-                text = text.split(marker_2, 1)[1]
-
-            # 3) 찾았다면, 그 뒤에서 다음 섹션(###, ⚠️ 등) 나오기 전까지만 사용
-            if text != result_text:
-                for end_marker in [
-                    "### ⚠️",          # ⚠️ 섹션
-                    "⚠️ 미드저니",     # 혹시 다른 형식
-                    "### 3️⃣",         # 다음 번호 섹션
-                    "### 1️⃣",         # 첫 섹션으로 돌아가는 경우
-                    "\n### "
-                ]:
-                    if end_marker in text:
-                        text = text.split(end_marker, 1)[0]
-                        break
-
-                mj_block = text.strip()
-
             with right:
                 st.markdown("### 🎨 Midjourney 프롬프트 (코드 복사용)")
 
+                # ---------------------------
+                # MJ 프롬프트 추출 로직
+                # ---------------------------
+                marker_1 = "2️⃣ 미드저니"
+                marker_2 = "### 2️⃣ 미드저니"
+
+                mj_block = None
+                text = result_text
+
+                # 시작점 찾기
+                if marker_1 in text:
+                    text = text.split(marker_1, 1)[1]
+                elif marker_2 in text:
+                    text = text.split(marker_2, 1)[1]
+
+                # 종료점 찾기
+                if text != result_text:
+                    for end_marker in ["###", "⚠️", "1️⃣", "3️⃣", "\n### "]:
+                        if end_marker in text:
+                            text = text.split(end_marker, 1)[0]
+                            break
+                    mj_block = text.strip()
+
                 if mj_block:
-                    # 혹시 LLM이 안에 ``` 같은 걸 넣었을 수 있으니 제거
-                    cleaned = mj_block.strip().strip("`").strip()
+                    cleaned = mj_block.strip("`").strip()
                     st.code(cleaned, language="text")
                 else:
-                    st.info("결과에서 '미드저니 사용 프롬프트' 구간을 찾지 못했어요. 시스템 인스트럭션 형식을 한 번 체크해 주세요.")
+                    st.info("미드저니 프롬프트를 찾지 못했습니다.")
                     st.code(result_text, language="text")
-
 
         except Exception as e:
             st.error(f"실행 중 오류가 발생했습니다: {e}")
