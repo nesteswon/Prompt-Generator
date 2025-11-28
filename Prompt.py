@@ -1,9 +1,11 @@
 import streamlit as st
-import google.generativeai as genai
-import openai
+from openai import OpenAI
+
+# 🔐 Streamlit Secrets 에서 OpenAI API Key 가져오기
+OPENAI_API_KEY = st.secrets["openai_api_key"]
 
 # ==============================================================================
-# [1] System Instruction (역할 + 규칙)
+# [1] System Instruction 설정 (역할 + 규칙)
 # ==============================================================================
 SYSTEM_INSTRUCTION = """
 당신은 입력된 내용을 분석하여 'Flow JSON 프롬프트'와 '미드저니 프롬프트'로 변환하는 전문 AI입니다.
@@ -20,122 +22,184 @@ SYSTEM_INSTRUCTION = """
 [조건 3: 미드저니 프롬프트 작성]
 - 모든 내용은 영문으로 번역되어야 합니다.
 - 다음 순서를 반드시 지켜서 조합하세요:
-  주제 → 액션 → 배경 → 카메라 → 스타일 → 구도
+  주제(Topic) → 액션(Action) → 배경(Background) → 카메라 움직임(Camera) → 스타일(Style) → 구도(Composition)
+- 각 요소는 쉼표(,)로 구분하세요.
 
 [조건 4: 미드저니 누락 확인]
-- 누락 요소는 마지막에 리스트로 출력하세요.
+- 미드저니 프롬프트 작성 후, 부족하거나 빠진 요소를 하단에 정리하세요.
+
+[출력 양식]
+1️⃣ Flow 사용 json 프롬프트
+- JSON 코드 블럭 형식으로 출력
+
+⚠️ Flow 사용 json 프롬프트 중 누락 / none 부분
+- 누락된 항목 목록을 마크다운 리스트로 출력
+
+2️⃣ 미드저니 사용 프롬프트
+- 한 줄짜리 영문 프롬프트로 출력
+- 구성 순서: 주제, 액션, 배경, 카메라 움직임, 스타일, 구도 (각 요소는 쉼표로 구분)
+
+⚠️ 미드저니 사용 프롬프트 중 누락부분
+- 부족하거나 빠진 요소를 리스트로 정리
+
+[JSON 템플릿]
+
+{
+  "topic_and_content": {
+    "description": "___"
+  },
+  "character": {
+    "gender": "___",
+    "appearance": {
+      "nationality": "___",
+      "age": "___",
+      "eye_color": "___",
+      "scar": "___",
+      "hair": "___"
+    },
+    "clothing": "___",
+    "emotions_sequence": [
+      "___",
+      "___",
+      "___"
+    ]
+  },
+  "action": {
+    "sequence": [
+      "___",
+      "___",
+      "___",
+      "___"
+    ],
+    "object_interaction": [
+      "___",
+      "___",
+      "___"
+    ]
+  },
+  "background": {
+    "location": "___",
+    "time_of_day": "___",
+    "elements": [
+      "___",
+      "___"
+    ],
+    "weather": "___",
+    "scene_lighting": "___"
+  },
+  "camera_work": {
+    "sequence": [
+      {
+        "duration": 3,
+        "shot_type": "___",
+        "description": "___"
+      },
+      {
+        "duration": 4,
+        "shot_type": "___",
+        "description": "___"
+      }
+    ],
+    "lens": "___",
+    "effects": [
+      "___"
+    ]
+  },
+  "style": {
+    "genre": "___",
+    "style_lighting": "___",
+    "film_grain": "___",
+    "color_palette": "___",
+    "mood": "___"
+  },
+  "aspect_ratio": "___",
+  "requirements": "full-size video without letterboxes"
+}
+
+[Flow 사용 json 프롬프트 중 누락 / none 부분 예시]
+
+1. character.appearance.eye_color : 눈 색상 정보 없음
+2. character.appearance.scar : 흉터 유무 정보 없음
+
+[미드저니 사용 프롬프트 출력 예시]
+
+Topic, Action, Background, Camera movement, Style, Composition
+
+[미드저니 사용 프롬프트 중 누락부분 예시]
+
+1. 카메라 움직임 관련 구체적인 표현 부족
+2. 조명 스타일 구체 정보 부족
 """
 
 # ==============================================================================
-# [2] Streamlit UI 설정
+# [2] Streamlit UI
 # ==============================================================================
-st.set_page_config(
-    page_title="Flow + Midjourney Prompt Generator",
-    layout="wide"
-)
+st.set_page_config(page_title="Flow + Midjourney Prompt Converter (OpenAI)", layout="wide")
 
-st.title("Flow JSON + Midjourney 프롬프트 생성기")
-st.caption("Google 또는 OpenAI 모델을 선택하여 프롬프트 생성")
+st.title("Flow JSON + Midjourney 프롬프트 변환기 (OpenAI 전용)")
+st.caption("한글 설명 → Flow용 JSON 프롬프트 + 미드저니용 영문 프롬프트 자동 생성")
 
 with st.sidebar:
     st.subheader("🔐 API 설정")
-
-    google_api_key = st.text_input(
-        "Google API Key (Gemini)",
-        type="password",
-        placeholder="AIza..."
+    st.markdown(
+        "- OpenAI API Key는 Streamlit Secrets에 `openai_api_key` 로 저장되어 사용됩니다.\n"
+        "- 이 화면에서는 별도의 키 입력이 필요 없습니다."
     )
+    st.markdown("---")
+    st.markdown("**사용 모델:** `gpt-4.1-mini` (원하면 코드에서 변경 가능)")
 
-    openai_api_key = st.text_input(
-        "OpenAI API Key (GPT)",
-        type="password",
-        placeholder="sk-..."
-    )
-
-    model_choice = st.selectbox(
-        "사용할 모델 선택",
-        ["Google Gemini (Flash)", "OpenAI GPT-4.1 / 4o"]
-    )
-
-st.markdown("### 1. 변환할 내용을 한국어로 입력하세요.")
-
-default_text = "아침 햇살 아래 카페 테라스에서 노트북을 사용하는 한국인 여성"
-
+st.markdown("### 1. 프롬프트로 사용할 내용을 한국어로 입력하세요.")
+default_text = "밝은 미소를 짓는 20대 한국인 여성 인물, 도심 카페 테라스에서 노트북으로 작업하는 장면"
 user_input = st.text_area(
     "설명 입력",
     value=default_text,
     height=200,
+    placeholder="여기에 인물, 행동, 배경, 분위기 등을 한국어로 자유롭게 적어주세요."
 )
 
 generate_btn = st.button("🚀 프롬프트 생성하기")
 
 # ==============================================================================
-# [3] LLM 요청 함수
+# [3] OpenAI 호출 함수
 # ==============================================================================
-
-def ask_google(prompt, api_key):
-    genai.configure(api_key=api_key)
-
-    model = genai.GenerativeModel(
-    "gemini-2.5-flash",
-    system_instruction=SYSTEM_INSTRUCTION
-)
-
-    response = model.generate_content(prompt)
-
-    return response.text
-
-
-def ask_openai(prompt, api_key):
-    client = openai.OpenAI(api_key=api_key)
+def ask_openai(prompt: str) -> str:
+    client = OpenAI(api_key=OPENAI_API_KEY)
 
     response = client.chat.completions.create(
-        model="gpt-4.1-mini",  # 비용: 매우 저렴, 속도 빠름
+        model="gpt-4.1-mini",  # 필요하면 gpt-4.1 / gpt-4.1-mini 등으로 변경 가능
         messages=[
             {"role": "system", "content": SYSTEM_INSTRUCTION},
-            {"role": "user", "content": prompt}
+            {"role": "user", "content": prompt},
         ],
         temperature=0.3,
     )
-
     return response.choices[0].message.content
 
 
 # ==============================================================================
-# [4] 실행 로직
+# [4] 생성 로직
 # ==============================================================================
 if generate_btn:
-    if not user_input.strip():
-        st.error("내용을 입력해 주세요.")
-
+    if not OPENAI_API_KEY:
+        st.error("OPENAI_API_KEY가 설정되지 않았습니다. Secrets에 'openai_api_key'를 등록해 주세요.")
+    elif not user_input.strip():
+        st.error("설명을 입력해 주세요.")
     else:
         try:
-            with st.spinner("AI가 프롬프트를 생성 중입니다..."):
-
-                if model_choice == "Google Gemini (Flash)":
-                    if not google_api_key:
-                        st.error("Google API Key를 입력하세요.")
-                        st.stop()
-                    result = ask_google(user_input, google_api_key)
-
-                elif model_choice == "OpenAI GPT-4.1 / 4o":
-                    if not openai_api_key:
-                        st.error("OpenAI API Key를 입력하세요.")
-                        st.stop()
-                    result = ask_openai(user_input, openai_api_key)
+            with st.spinner("OpenAI가 프롬프트를 생성하는 중입니다..."):
+                result_text = ask_openai(user_input)
 
             st.success("프롬프트 생성 완료!")
 
-            # UI 2단 컬럼
-            col1, col2 = st.columns(2)
+            left, right = st.columns(2)
 
-            with col1:
-                st.markdown("### 🧩 분석 결과 (Markdown 그대로)")
-                st.markdown(result)
+            with left:
+                st.markdown("### 🧩 전체 결과 (Markdown)")
+                st.markdown(result_text)
 
-            with col2:
+            with right:
                 st.markdown("### 📋 Raw Text")
-                st.code(result)
+                st.code(result_text)
 
         except Exception as e:
-            st.error(f"오류 발생: {e}")
+            st.error(f"실행 중 오류가 발생했습니다: {e}")
