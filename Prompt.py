@@ -198,7 +198,7 @@ if generate_btn:
                 st.markdown(result_text)
 
             with right:
-    st.markdown("### 🎨 Midjourney 프롬프트 (코드 복사용)")
+                st.markdown("### 🎨 Midjourney 프롬프트 (코드 복사용)")
 
     # ---------------------------
     # MJ 프롬프트 추출 로직 (개선 버전)
