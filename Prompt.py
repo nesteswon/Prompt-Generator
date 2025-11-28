@@ -15,7 +15,8 @@ SYSTEM_INSTRUCTION = """
 - 입력된 내용을 바탕으로 JSON의 "___" 부분을 영문으로 번역하여 채우세요.
 - JSON 구조(Key값)를 절대 변경하거나 삭제하지 마세요.
 - 입력으로 제공되는 [오디오 / 사운드], [타임라인 / 씬 분할] 정보는 반드시 JSON의 "audio"와 "timeline" 섹션에 반영해야 합니다.
-- 타임라인 정보는 가능한 경우 camera_work.sequence 의 duration, description, shot_type 과도 자연스럽게 연결해서 설계하세요.
+- 카메라 정보(샷 타입, 카메라 움직임, 화면 내용)는 가능한 한 timeline.scenes 안에 통합해서 표현하세요.
+- camera_work 섹션은 전체 영상에 공통으로 적용되는 렌즈, 효과, 전역적인 카메라 스타일 정도만 간단히 채우세요.
 - 카메라, 렌즈, 조명 등은 설명이 없을 때는 당신이 장면에 어울리는 값을 추천하여 채워 주세요.
 
 [조건 2: 누락 데이터 처리]
@@ -93,22 +94,12 @@ SYSTEM_INSTRUCTION = """
     "scene_lighting": "___"
   },
   "camera_work": {
-    "sequence": [
-      {
-        "duration": 3,
-        "shot_type": "___",
-        "description": "___"
-      },
-      {
-        "duration": 4,
-        "shot_type": "___",
-        "description": "___"
-      }
-    ],
     "lens": "___",
     "effects": [
+      "___",
       "___"
-    ]
+    ],
+    "notes": "___"
   },
   "style": {
     "genre": "___",
@@ -131,16 +122,22 @@ SYSTEM_INSTRUCTION = """
       {
         "start_time": 0,
         "end_time": 3,
+        "shot_type": "___",
+        "camera_movement": "___",
         "description": "___"
       },
       {
         "start_time": 3,
         "end_time": 6,
+        "shot_type": "___",
+        "camera_movement": "___",
         "description": "___"
       },
       {
         "start_time": 6,
         "end_time": 8,
+        "shot_type": "___",
+        "camera_movement": "___",
         "description": "___"
       }
     ]
