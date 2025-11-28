@@ -1,8 +1,9 @@
 import streamlit as st
 import google.generativeai as genai
 
+# 🔐 Streamlit Secrets 에서 API Key 불러오기
 GOOGLE_API_KEY = st.secrets["google_api_key"]
-OPENAI_API_KEY = st.secrets["openai_api_key"]
+OPENAI_API_KEY = st.secrets.get("openai_api_key", "")
 
 # ==============================================================================
 # [1] System Instruction 설정 (역할 + 규칙)
@@ -140,15 +141,10 @@ st.title("Flow JSON + Midjourney 프롬프트 변환기")
 st.caption("한글로 설명을 입력하면, Flow용 JSON 프롬프트와 미드저니용 영문 프롬프트를 자동으로 생성합니다.")
 
 with st.sidebar:
-    st.subheader("🔐 Google API 설정")
-    api_key = st.text_input(
-        "Google API Key (AIza로 시작)",
-        type="password",
-        help="Google AI Studio에서 발급받은 API 키를 입력하세요."
-    )
+    st.subheader("🔐 API 설정 정보")
     st.markdown(
-        "- 키는 실행 중 메모리에만 사용되고, 앱에 저장되지 않습니다.\n"
-        "- 성능/비용을 위해 gemini-1.5-flash 모델을 사용합니다."
+        "- Google API Key는 Streamlit Secrets에 저장되어 사용됩니다.\n"
+        "- `google_api_key` / `openai_api_key` 항목을 Secrets에 설정해 두면, 여기서 따로 입력할 필요가 없습니다."
     )
 
 st.markdown("### 1. 프롬프트로 사용할 내용을 한국어로 입력하세요.")
@@ -166,17 +162,18 @@ generate_btn = st.button("🚀 프롬프트 생성하기")
 # [3] 생성 로직
 # ==============================================================================
 if generate_btn:
-    if not api_key:
-        st.error("먼저 사이드바에 Google API Key를 입력해 주세요.")
+    if not GOOGLE_API_KEY:
+        st.error("GOOGLE_API_KEY가 설정되지 않았습니다. Streamlit Secrets에 'google_api_key'를 등록해 주세요.")
     elif not user_input.strip():
         st.error("설명을 입력해 주세요.")
     else:
         try:
-            # 1) 키 설정
-            genai.configure(api_key=api_key)
+            # 1) 키 설정 (Secrets에서 가져온 키 사용)
+            genai.configure(api_key=GOOGLE_API_KEY)
 
             # 2) 모델 생성 (system_instruction 포함)
             model = genai.GenerativeModel(
+                # 필요에 따라 모델 이름 조정 (예: "gemini-flash-latest" 등)
                 "gemini-1.5-flash",
                 system_instruction=SYSTEM_INSTRUCTION
             )
