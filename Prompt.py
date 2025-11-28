@@ -8,16 +8,18 @@ OPENAI_API_KEY = st.secrets["openai_api_key"]
 # [1] System Instruction 설정 (역할 + 규칙)
 # ==============================================================================
 SYSTEM_INSTRUCTION = """
-당신은 입력된 내용을 분석하여 'Flow JSON 프롬프트'와 '미드저니 프롬프트'로 변환하는 전문 AI입니다.
+당신은 입력된 내용을 분석하여 'ComfyUI JSON 프롬프트'와 '미드저니 프롬프트'로 변환하는 전문 AI입니다.
 사용자가 입력한 내용을 바탕으로 아래의 [조건]과 [양식]을 완벽하게 준수하여 답변하세요.
 
-[조건 1: Flow JSON 작성]
+[조건 1: ComfyUI JSON 작성]
 - 입력된 내용을 바탕으로 JSON의 "___" 부분을 영문으로 번역하여 채우세요.
+- 카메라, 렌즈, 조명 등은 설명이 없을 떄는 추천으로 해주세요.
 - JSON 구조(Key값)를 절대 변경하거나 삭제하지 마세요.
 
 [조건 2: 누락 데이터 처리]
 - 입력 내용에서 찾을 수 없는 정보는 "none"이라고 기입하세요.
-- JSON 작성 후, 하단에 'Flow 사용 json 프롬프트 중 누락 / none 부분'을 별도로 정리하세요.
+- 카메라, 렌즈, 조명 등은 설명이 없을 떄는 추천으로 해주세요.
+- JSON 작성 후, 하단에 'ComfyUI 사용 json 프롬프트 중 누락 / none 부분'을 별도로 정리하세요.
 
 [조건 3: 미드저니 프롬프트 작성]
 - 모든 내용은 영문으로 번역되어야 합니다.
@@ -29,10 +31,10 @@ SYSTEM_INSTRUCTION = """
 - 미드저니 프롬프트 작성 후, 부족하거나 빠진 요소를 하단에 정리하세요.
 
 [출력 양식]
-1️⃣ Flow 사용 json 프롬프트
+1️⃣ ComfyUI 사용 json 프롬프트
 - JSON 코드 블럭 형식으로 출력
 
-⚠️ Flow 사용 json 프롬프트 중 누락 / none 부분
+⚠️ ComfyUI 사용 json 프롬프트 중 누락 / none 부분
 - 누락된 항목 목록을 마크다운 리스트로 출력
 
 2️⃣ 미드저니 사용 프롬프트
@@ -116,7 +118,7 @@ SYSTEM_INSTRUCTION = """
   "requirements": "full-size video without letterboxes"
 }
 
-[Flow 사용 json 프롬프트 중 누락 / none 부분 예시]
+[ComfyUI 사용 json 프롬프트 중 누락 / none 부분 예시]
 
 1. character.appearance.eye_color : 눈 색상 정보 없음
 2. character.appearance.scar : 흉터 유무 정보 없음
@@ -134,7 +136,7 @@ Topic, Action, Background, Camera movement, Style, Composition
 # ==============================================================================
 # [2] Streamlit UI
 # ==============================================================================
-st.set_page_config(page_title="Flow + Midjourney Prompt Converter (OpenAI)", layout="wide")
+st.set_page_config(page_title="ComfyUI + Midjourney Prompt Converter (GPT)", layout="wide")
 
 st.title("Flow JSON + Midjourney 프롬프트 변환기 (OpenAI 전용)")
 st.caption("한글 설명 → Flow용 JSON 프롬프트 + 미드저니용 영문 프롬프트 자동 생성")
@@ -149,7 +151,7 @@ with st.sidebar:
     st.markdown("**사용 모델:** `gpt-4.1-mini` (원하면 코드에서 변경 가능)")
 
 st.markdown("### 1. 프롬프트로 사용할 내용을 한국어로 입력하세요.")
-default_text = "밝은 미소를 짓는 20대 한국인 여성 인물, 도심 카페 테라스에서 노트북으로 작업하는 장면"
+default_text = "봄, 도쿄, 카페, 20대 여성, 아이돌, 긴머리, 흰티셔츠, 청바지, 스니커즈, 벚꽃나무, 잔잔한 바람, Cannon 5D MARK2, Outfocus"
 user_input = st.text_area(
     "설명 입력",
     value=default_text,
