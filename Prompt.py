@@ -225,14 +225,20 @@ with st.sidebar:
 
 st.markdown("## 1) 기본 정보")
 
-col1, col2 = st.columns(2)
-with col1:
-    brand = st.text_input("브랜드 / 프로젝트 이름", value="니코모리")
-    prompt_name = st.text_input("프롬프트 이름 (내가 구분용으로 쓸 제목)", value="카페 테라스 작업 씬")
+with st.container():
+    st.markdown("### 🎬 프로젝트 기본 설정")
+    
+    c1, c2, c3 = st.columns([1.2, 0.8, 0.8])
 
-with col2:
-    aspect = st.selectbox("영상 비율 (Aspect Ratio)", ["16:9", "9:16", "1:1", "21:9"], index=0)
-    duration = st.number_input("영상 길이 (초)", min_value=3, max_value=60, value=8)
+    with c1:
+        brand = st.text_input("브랜드 / 프로젝트명", value="니코모리", placeholder="예: NICO MORI")
+
+    with c2:
+        aspect = st.selectbox("비율", ["16:9", "9:16", "1:1", "21:9"], index=0)
+
+    with c3:
+        duration = st.number_input("길이(초)", min_value=3, max_value=60, value=8, step=1)
+
 
 st.markdown("---")
 st.markdown("## 2) 인물 / 캐릭터 / 액션")
