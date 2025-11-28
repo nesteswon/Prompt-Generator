@@ -241,14 +241,6 @@ def ask_openai(prompt: str) -> str:
 if generate_btn:
     if not OPENAI_API_KEY:
         st.error("OPENAI_API_KEY가 설정되지 않았습니다. Secrets에 'openai_api_key'를 등록해 주세요.")
-    elif not user_input.strip():
-        st.error("설명을 입력해 주세요.")
-    else:
-        try:
-            with st.spinner("OpenAI가 프롬프트를 생성하는 중입니다..."):
-if generate_btn:
-    if not OPENAI_API_KEY:
-        st.error("OPENAI_API_KEY가 설정되지 않았습니다. Secrets에 'openai_api_key'를 등록해 주세요.")
     else:
         # 1) 세분화된 입력들을 하나의 텍스트로 합치기
         combined_prompt = f"""
