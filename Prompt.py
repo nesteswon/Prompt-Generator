@@ -1,6 +1,9 @@
 import streamlit as st
 import google.generativeai as genai
 
+GOOGLE_API_KEY = st.secrets["google_api_key"]
+OPENAI_API_KEY = st.secrets["openai_api_key"]
+
 # ==============================================================================
 # [1] System Instruction 설정 (역할 + 규칙)
 # ==============================================================================
