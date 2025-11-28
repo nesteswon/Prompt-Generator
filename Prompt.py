@@ -172,9 +172,8 @@ if generate_btn:
             genai.configure(api_key=GOOGLE_API_KEY)
 
             # 2) 모델 생성 (system_instruction 포함)
-            model = genai.GenerativeModel(
-                # 필요에 따라 모델 이름 조정 (예: "gemini-flash-latest" 등)
-                "gemini-1.5-flash",
+            model = genai.GenerativeModel('gemini-pro'),
+          
                 system_instruction=SYSTEM_INSTRUCTION
             )
 
