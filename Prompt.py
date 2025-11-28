@@ -4,7 +4,34 @@ import base64
 
 # 🔐 Streamlit Secrets 에서 OpenAI API Key 가져오기
 OPENAI_API_KEY = st.secrets["openai_api_key"]
+# ✅ 기본값 상수 (리셋 시 여기에 적힌 값으로 돌아감)
+DEFAULT_BRAND = "니코모리"
+DEFAULT_ASPECT = "16:9"
+DEFAULT_DURATION = 8
 
+DEFAULT_SUBJECT = "밝게 미소 짓는 20대 한국인 여성"
+DEFAULT_CHARACTER_DETAIL = "긴 생머리, 깔끔한 셔츠와 데님, 자연스러운 메이크업"
+DEFAULT_ACTION = "카페 테라스에서 노트북으로 작업하며, 가끔 창밖을 보며 미소 짓는다"
+DEFAULT_EMOTION = "집중 + 여유 + 작은 설렘"
+
+DEFAULT_BACKGROUND = "햇살이 들어오는 도심 카페 테라스, 주변에 화분과 나무, 뒤로 흐릿한 도시 풍경"
+DEFAULT_LIGHTING = "golden hour, soft natural light"
+DEFAULT_CAMERA_MOVE = "slow dolly-in, medium shot, 약간 높은 앵글"
+DEFAULT_STYLE = "cinematic, realistic, soft color grading"
+DEFAULT_COMPOSITION = "rule of thirds, subject slightly off-center"
+
+DEFAULT_BGM = "warm lo-fi beat, soft piano, medium tempo"
+DEFAULT_SFX = "카페 사람들 소음, 잔잔한 대화 소리, 컵 부딪히는 소리"
+DEFAULT_VOICE = ""
+
+DEFAULT_TIMELINE_OVERVIEW = "총 8초, 3개의 주요 구간으로 구성"
+DEFAULT_TIMELINE_DETAIL = (
+    "0-3초: 카페 전경, 테라스와 도시 배경을 보여주는 와이드 샷\n"
+    "3-6초: 노트북으로 작업 중인 인물을 중심으로 미디엄 샷, 화면에 집중하는 표정\n"
+    "6-8초: 살짝 카메라가 줌인되며 창밖을 보며 미소 짓는 클로즈업"
+)
+DEFAULT_EXTRA = ""
+DEFAULT_PROMPT_NAME = "카페 테라스 작업 씬"
 # ==============================================================================
 # [1] System Instruction 설정 (역할 + 규칙)
 # ==============================================================================
@@ -212,6 +239,50 @@ Topic, Action, Background, Camera movement, Style, Composition
 # ==============================================================================
 # [2] Streamlit UI
 # ==============================================================================
+import streamlit as st
+from openai import OpenAI
+import base64
+
+# 🔐 Streamlit Secrets 에서 OpenAI API Key 가져오기
+OPENAI_API_KEY = st.secrets["openai_api_key"]
+
+# ✅ 기본값 상수 (리셋 시 여기에 적힌 값으로 돌아감)
+DEFAULT_BRAND = "니코모리"
+DEFAULT_ASPECT = "16:9"
+DEFAULT_DURATION = 8
+
+DEFAULT_SUBJECT = "밝게 미소 짓는 20대 한국인 여성"
+DEFAULT_CHARACTER_DETAIL = "긴 생머리, 깔끔한 셔츠와 데님, 자연스러운 메이크업"
+DEFAULT_ACTION = "카페 테라스에서 노트북으로 작업하며, 가끔 창밖을 보며 미소 짓는다"
+DEFAULT_EMOTION = "집중 + 여유 + 작은 설렘"
+
+DEFAULT_BACKGROUND = "햇살이 들어오는 도심 카페 테라스, 주변에 화분과 나무, 뒤로 흐릿한 도시 풍경"
+DEFAULT_LIGHTING = "golden hour, soft natural light"
+DEFAULT_CAMERA_MOVE = "slow dolly-in, medium shot, 약간 높은 앵글"
+DEFAULT_STYLE = "cinematic, realistic, soft color grading"
+DEFAULT_COMPOSITION = "rule of thirds, subject slightly off-center"
+
+DEFAULT_BGM = "warm lo-fi beat, soft piano, medium tempo"
+DEFAULT_SFX = "카페 사람들 소음, 잔잔한 대화 소리, 컵 부딪히는 소리"
+DEFAULT_VOICE = ""
+
+DEFAULT_TIMELINE_OVERVIEW = "총 8초, 3개의 주요 구간으로 구성"
+DEFAULT_TIMELINE_DETAIL = (
+    "0-3초: 카페 전경, 테라스와 도시 배경을 보여주는 와이드 샷\n"
+    "3-6초: 노트북으로 작업 중인 인물을 중심으로 미디엄 샷, 화면에 집중하는 표정\n"
+    "6-8초: 살짝 카메라가 줌인되며 창밖을 보며 미소 짓는 클로즈업"
+)
+DEFAULT_EXTRA = ""
+DEFAULT_PROMPT_NAME = "카페 테라스 작업 씬"
+
+# =====================================================================
+# SYSTEM_INSTRUCTION (네가 올린 그대로 사용, 생략하지 말고 위에서 쓰던 것 넣어두면 됨)
+# =====================================================================
+SYSTEM_INSTRUCTION = """...여기에는 네가 위에 써둔 SYSTEM_INSTRUCTION 그대로..."""
+
+# ==============================================================================
+# [2] Streamlit UI
+# ==============================================================================
 st.set_page_config(page_title="ComfyUI + Midjourney Prompt Converter (GPT)", layout="wide")
 
 st.title("ComfyUI JSON + Midjourney 프롬프트 변환기 (OpenAI 전용)")
@@ -226,123 +297,246 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("**사용 모델:** `gpt-4.1-mini` (텍스트 전용, 이미지 모드는 아래에서 별도 모델 사용)")
 
+# ======================
+# 1) 기본 정보 + 리셋
+# ======================
 st.markdown("## 1) 기본 정보")
 
 with st.container():
-    st.markdown("### 🎬 프로젝트 기본 설정")
-    
+    header_col, reset_col = st.columns([4, 1])
+    with header_col:
+        st.markdown("### 🎬 프로젝트 기본 설정")
+    with reset_col:
+        if st.button("↺ 기본 정보 리셋", key="reset_basic"):
+            st.session_state["brand"] = DEFAULT_BRAND
+            st.session_state["aspect"] = DEFAULT_ASPECT
+            st.session_state["duration"] = DEFAULT_DURATION
+            st.session_state["prompt_name"] = DEFAULT_PROMPT_NAME
+
     c1, c2, c3 = st.columns([1.2, 0.8, 0.8])
 
     with c1:
-        brand = st.text_input("브랜드 / 프로젝트명", value="니코모리", placeholder="예: NICO MORI")
+        brand = st.text_input(
+            "브랜드 / 프로젝트명",
+            value=DEFAULT_BRAND,
+            placeholder="예: NICO MORI",
+            key="brand"
+        )
 
     with c2:
-        aspect = st.selectbox("비율", ["16:9", "9:16", "1:1", "21:9"], index=0)
+        aspect = st.selectbox(
+            "비율",
+            ["16:9", "9:16", "1:1", "21:9"],
+            index=0,
+            key="aspect"
+        )
 
     with c3:
-        duration = st.number_input("길이(초)", min_value=3, max_value=60, value=8, step=1)
+        duration = st.number_input(
+            "길이(초)",
+            min_value=3,
+            max_value=60,
+            value=DEFAULT_DURATION,
+            step=1,
+            key="duration"
+        )
 
-# 🔹 prompt_name 누락 방지용 (기본 정보 바로 아래에 배치)
-prompt_name = st.text_input("프롬프트 이름 (내가 구분용으로 쓸 제목)", value="카페 테라스 작업 씬")
+prompt_name = st.text_input(
+    "프롬프트 이름 (내가 구분용으로 쓸 제목)",
+    value=DEFAULT_PROMPT_NAME,
+    key="prompt_name"
+)
 
 st.markdown("---")
+
+# ===============================
+# 2) 인물 / 캐릭터 / 액션 + 리셋
+# ===============================
 st.markdown("## 2) 인물 / 캐릭터 / 액션")
 
-col3, col4 = st.columns(2)
-with col3:
-    subject = st.text_input("주제 / 메인 인물", value="밝게 미소 짓는 20대 한국인 여성")
-    character_detail = st.text_area(
-        "캐릭터 디테일 (외모, 헤어, 의상 등)",
-        height=100,
-        value="긴 생머리, 깔끔한 셔츠와 데님, 자연스러운 메이크업"
-    )
+with st.container():
+    header_col, reset_col = st.columns([4, 1])
+    with header_col:
+        st.markdown("### 👤 캐릭터 & 액션")
+    with reset_col:
+        if st.button("↺ 인물/캐릭터 리셋", key="reset_character"):
+            st.session_state["subject"] = DEFAULT_SUBJECT
+            st.session_state["character_detail"] = DEFAULT_CHARACTER_DETAIL
+            st.session_state["action"] = DEFAULT_ACTION
+            st.session_state["emotion"] = DEFAULT_EMOTION
 
-with col4:
-    action = st.text_area(
-        "액션 / 행동 (무엇을 하고 있는지)",
-        height=100,
-        value="카페 테라스에서 노트북으로 작업하며, 가끔 창밖을 보며 미소 짓는다"
-    )
-    emotion = st.text_input("감정 / 분위기", value="집중 + 여유 + 작은 설렘")
+    col3, col4 = st.columns(2)
+    with col3:
+        subject = st.text_input(
+            "주제 / 메인 인물",
+            value=DEFAULT_SUBJECT,
+            key="subject"
+        )
+        character_detail = st.text_area(
+            "캐릭터 디테일 (외모, 헤어, 의상 등)",
+            height=100,
+            value=DEFAULT_CHARACTER_DETAIL,
+            key="character_detail"
+        )
+
+    with col4:
+        action = st.text_area(
+            "액션 / 행동 (무엇을 하고 있는지)",
+            height=100,
+            value=DEFAULT_ACTION,
+            key="action"
+        )
+        emotion = st.text_input(
+            "감정 / 분위기",
+            value=DEFAULT_EMOTION,
+            key="emotion"
+        )
 
 st.markdown("---")
+
+# ===============================
+# 3) 배경 / 카메라 / 스타일 + 리셋
+# ===============================
 st.markdown("## 3) 배경 / 카메라 / 스타일")
 
-col5, col6 = st.columns(2)
-with col5:
-    background = st.text_area(
-        "배경 / 장소 설명",
-        height=100,
-        value="햇살이 들어오는 도심 카페 테라스, 주변에 화분과 나무, 뒤로 흐릿한 도시 풍경"
-    )
-    lighting = st.text_input("조명 / 분위기", value="golden hour, soft natural light")
+with st.container():
+    header_col, reset_col = st.columns([4, 1])
+    with header_col:
+        st.markdown("### 🏙 배경 & 카메라 & 스타일")
+    with reset_col:
+        if st.button("↺ 배경/카메라 리셋", key="reset_bg_cam"):
+            st.session_state["background"] = DEFAULT_BACKGROUND
+            st.session_state["lighting"] = DEFAULT_LIGHTING
+            st.session_state["camera_move"] = DEFAULT_CAMERA_MOVE
+            st.session_state["style"] = DEFAULT_STYLE
+            st.session_state["composition"] = DEFAULT_COMPOSITION
 
-with col6:
-    camera_move = st.text_input(
-        "카메라 움직임 / 샷 타입",
-        value="slow dolly-in, medium shot, 약간 높은 앵글"
-    )
-    style = st.text_input(
-        "스타일 (예: 시네마틱, 픽사풍, 사진 스타일 등)",
-        value="cinematic, realistic, soft color grading"
-    )
-    composition = st.text_input(
-        "구도 (예: rule of thirds, center framing 등)",
-        value="rule of thirds, subject slightly off-center"
-    )
+    col5, col6 = st.columns(2)
+    with col5:
+        background = st.text_area(
+            "배경 / 장소 설명",
+            height=100,
+            value=DEFAULT_BACKGROUND,
+            key="background"
+        )
+        lighting = st.text_input(
+            "조명 / 분위기",
+            value=DEFAULT_LIGHTING,
+            key="lighting"
+        )
+
+    with col6:
+        camera_move = st.text_input(
+            "카메라 움직임 / 샷 타입",
+            value=DEFAULT_CAMERA_MOVE,
+            key="camera_move"
+        )
+        style = st.text_input(
+            "스타일 (예: 시네마틱, 픽사풍, 사진 스타일 등)",
+            value=DEFAULT_STYLE,
+            key="style"
+        )
+        composition = st.text_input(
+            "구도 (예: rule of thirds, center framing 등)",
+            value=DEFAULT_COMPOSITION,
+            key="composition"
+        )
 
 st.markdown("---")
+
+# ===============================
+# 4) 오디오 / 사운드 + 리셋
+# ===============================
 st.markdown("## 4) 오디오 / 사운드")
 
-col_a1, col_a2 = st.columns(2)
-with col_a1:
-    audio_bgm = st.text_input(
-        "배경 음악 (BGM)",
-        value="warm lo-fi beat, soft piano, medium tempo",
-        help="음악 장르, 분위기, 템포 등을 적어주세요."
-    )
-    audio_sfx = st.text_area(
-        "효과음 (SFX)",
-        height=80,
-        value="카페 사람들 소음, 잔잔한 대화 소리, 컵 부딪히는 소리",
-        help="현장감 있는 소리, 환경음 등을 적어주세요."
-    )
+with st.container():
+    header_col, reset_col = st.columns([4, 1])
+    with header_col:
+        st.markdown("### 🎧 사운드 설계")
+    with reset_col:
+        if st.button("↺ 오디오 리셋", key="reset_audio"):
+            st.session_state["audio_bgm"] = DEFAULT_BGM
+            st.session_state["audio_sfx"] = DEFAULT_SFX
+            st.session_state["audio_voice"] = DEFAULT_VOICE
 
-with col_a2:
-    audio_voice = st.text_area(
-        "내레이션 / 대사 (선택)",
-        height=120,
-        placeholder="예: 그녀의 내레이션, 브랜드 메시지, 짧은 카피 문구 등"
-    )
+    col_a1, col_a2 = st.columns(2)
+    with col_a1:
+        audio_bgm = st.text_input(
+            "배경 음악 (BGM)",
+            value=DEFAULT_BGM,
+            help="음악 장르, 분위기, 템포 등을 적어주세요.",
+            key="audio_bgm"
+        )
+        audio_sfx = st.text_area(
+            "효과음 (SFX)",
+            height=80,
+            value=DEFAULT_SFX,
+            help="현장감 있는 소리, 환경음 등을 적어주세요.",
+            key="audio_sfx"
+        )
+
+    with col_a2:
+        audio_voice = st.text_area(
+            "내레이션 / 대사 (선택)",
+            height=120,
+            value=DEFAULT_VOICE,
+            placeholder="예: 그녀의 내레이션, 브랜드 메시지, 짧은 카피 문구 등",
+            key="audio_voice"
+        )
 
 st.markdown("---")
+
+# ===============================
+# 5) 타임라인 / 씬 분할 + 리셋
+# ===============================
 st.markdown("## 5) 타임라인 / 씬 분할")
 
-timeline_overview = st.text_input(
-    "타임라인 요약",
-    value="총 8초, 3개의 주요 구간으로 구성",
-    help="전체 길이와 씬 분할 개수 정도를 간단히 적어주세요."
-)
+with st.container():
+    header_col, reset_col = st.columns([4, 1])
+    with header_col:
+        st.markdown("### ⏱ 타임라인 구조")
+    with reset_col:
+        if st.button("↺ 타임라인 리셋", key="reset_timeline"):
+            st.session_state["timeline_overview"] = DEFAULT_TIMELINE_OVERVIEW
+            st.session_state["timeline_detail"] = DEFAULT_TIMELINE_DETAIL
 
-timeline_detail = st.text_area(
-    "씬별 타임라인 (초 단위로 적어도 좋아요)",
-    height=140,
-    value=(
-        "0-3초: 카페 전경, 테라스와 도시 배경을 보여주는 와이드 샷\n"
-        "3-6초: 노트북으로 작업 중인 인물을 중심으로 미디엄 샷, 화면에 집중하는 표정\n"
-        "6-8초: 살짝 카메라가 줌인되며 창밖을 보며 미소 짓는 클로즈업"
-    ),
-    help="0-3초 / 3-6초 처럼 시간대별로 어떤 장면이 나오는지 적어주세요."
-)
+    timeline_overview = st.text_input(
+        "타임라인 요약",
+        value=DEFAULT_TIMELINE_OVERVIEW,
+        help="전체 길이와 씬 분할 개수 정도를 간단히 적어주세요.",
+        key="timeline_overview"
+    )
+
+    timeline_detail = st.text_area(
+        "씬별 타임라인 (초 단위로 적어도 좋아요)",
+        height=140,
+        value=DEFAULT_TIMELINE_DETAIL,
+        help="0-3초 / 3-6초 처럼 시간대별로 어떤 장면이 나오는지 적어주세요.",
+        key="timeline_detail"
+    )
 
 st.markdown("---")
+
+# ===============================
+# 6) 추가 메모 + 리셋
+# ===============================
 st.markdown("## 6) 추가 메모")
 
-extra = st.text_area(
-    "추가로 반영되면 좋은 요소들 (선택)",
-    height=80,
-    placeholder="예: 손에 머그컵 들고 있음, 바람에 머리카락이 살짝 흩날림, 브랜딩 컬러를 배경에 살짝 반영 등"
-)
+with st.container():
+    header_col, reset_col = st.columns([4, 1])
+    with header_col:
+        st.markdown("### 📝 기타 메모")
+    with reset_col:
+        if st.button("↺ 메모 리셋", key="reset_extra"):
+            st.session_state["extra"] = DEFAULT_EXTRA
+
+    extra = st.text_area(
+        "추가로 반영되면 좋은 요소들 (선택)",
+        height=80,
+        value=DEFAULT_EXTRA,
+        placeholder="예: 손에 머그컵 들고 있음, 바람에 머리카락이 살짝 흩날림, 브랜딩 컬러를 배경에 살짝 반영 등",
+        key="extra"
+    )
 
 generate_btn = st.button("🚀 프롬프트 생성하기 (텍스트 기반)")
 
