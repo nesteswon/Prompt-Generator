@@ -189,7 +189,7 @@ if generate_btn:
             with st.spinner("OpenAI가 프롬프트를 생성하는 중입니다..."):
                 result_text = ask_openai(user_input)
 
-                        st.success("프롬프트 생성 완료!")
+        st.success("프롬프트 생성 완료!")
 
             # 4) 결과 표시 (왼쪽/오른쪽 나눠서 보기 좋게)
             left, right = st.columns(2)
