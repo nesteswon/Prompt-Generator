@@ -13,12 +13,14 @@ SYSTEM_INSTRUCTION = """
 
 [조건 1: ComfyUI JSON 작성]
 - 입력된 내용을 바탕으로 JSON의 "___" 부분을 영문으로 번역하여 채우세요.
-- 카메라, 렌즈, 조명 등은 설명이 없을 떄는 추천으로 해주세요.
 - JSON 구조(Key값)를 절대 변경하거나 삭제하지 마세요.
+- 입력으로 제공되는 [오디오 / 사운드], [타임라인 / 씬 분할] 정보는 반드시 JSON의 "audio"와 "timeline" 섹션에 반영해야 합니다.
+- 타임라인 정보는 가능한 경우 camera_work.sequence 의 duration, description, shot_type 과도 자연스럽게 연결해서 설계하세요.
+- 카메라, 렌즈, 조명 등은 설명이 없을 때는 당신이 장면에 어울리는 값을 추천하여 채워 주세요.
 
 [조건 2: 누락 데이터 처리]
 - 입력 내용에서 찾을 수 없는 정보는 "none"이라고 기입하세요.
-- 카메라, 렌즈, 조명 등은 설명이 없을 떄는 추천으로 해주세요.
+- 카메라, 렌즈, 조명 등은 설명이 없을 떄는 추천으로 채우고, 정말 결정하기 어려운 경우에만 "none"을 사용하세요.
 - JSON 작성 후, 하단에 'ComfyUI 사용 json 프롬프트 중 누락 / none 부분'을 별도로 정리하세요.
 
 [조건 3: 미드저니 프롬프트 작성]
@@ -26,6 +28,7 @@ SYSTEM_INSTRUCTION = """
 - 다음 순서를 반드시 지켜서 조합하세요:
   주제(Topic) → 액션(Action) → 배경(Background) → 카메라 움직임(Camera) → 스타일(Style) → 구도(Composition)
 - 각 요소는 쉼표(,)로 구분하세요.
+- 오디오 / 타임라인에서 유추되는 분위기나 리듬감이 있다면, Style / Camera movement / Mood에 자연스럽게 녹여서 표현하세요.
 
 [조건 4: 미드저니 누락 확인]
 - 미드저니 프롬프트 작성 후, 부족하거나 빠진 요소를 하단에 정리하세요.
@@ -113,6 +116,34 @@ SYSTEM_INSTRUCTION = """
     "film_grain": "___",
     "color_palette": "___",
     "mood": "___"
+  },
+  "audio": {
+    "bgm": "___",
+    "sfx": [
+      "___",
+      "___"
+    ],
+    "voice_over": "___"
+  },
+  "timeline": {
+    "overview": "___",
+    "scenes": [
+      {
+        "start_time": 0,
+        "end_time": 3,
+        "description": "___"
+      },
+      {
+        "start_time": 3,
+        "end_time": 6,
+        "description": "___"
+      },
+      {
+        "start_time": 6,
+        "end_time": 8,
+        "description": "___"
+      }
+    ]
   },
   "aspect_ratio": "___",
   "requirements": "full-size video without letterboxes"
