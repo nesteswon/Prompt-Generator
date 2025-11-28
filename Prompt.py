@@ -1,5 +1,6 @@
 import streamlit as st
 from openai import OpenAI
+import base64
 
 # 🔐 Streamlit Secrets 에서 OpenAI API Key 가져오기
 OPENAI_API_KEY = st.secrets["openai_api_key"]
@@ -38,20 +39,22 @@ SYSTEM_INSTRUCTION = """
 - "camera_work" 섹션은 전체 영상에 공통으로 적용되는 렌즈, 전역적인 카메라 스타일, 효과 정도만 간단히 채우세요.
   - 씬별 카메라 움직임, 샷 타입, 구체적인 화면 설명은 모두 "timeline" 배열의 "action" 텍스트 안에 포함합니다.
 - 카메라, 렌즈, 조명 등은 설명이 없을 때는 당신이 장면에 어울리는 값을 "추천"해서 채우고, 정말 결정하기 어려운 경우에만 "none"을 사용하세요.
-※ 중요 규칙: 
-- 카메라 움직임, 샷 타입, 앵글, 화면 묘사 등 모든 카메라 관련 구체 정보는 반드시 timeline[*].action 내부 문장으로만 표현해야 합니다. 
+
+※ 중요 규칙:
+- 카메라 움직임, 샷 타입, 앵글, 화면 묘사 등 모든 카메라 관련 구체 정보는 반드시 timeline[*].action 내부 문장으로만 표현해야 합니다.
 camera_work.notes 또는 camera_work.effects 안에는 절대로 구체적인 카메라 움직임(dolly, zoom, pan, tilt), 샷 타입(wide, medium, close-up), 앵글(high-angle, low-angle) 정보를 넣지 마세요.
+
 ※ Voice Over 관련 중요 규칙:
 - 만약 사용자가 voice_over 또는 대사(말한 문장)를 제공한 경우,
 timeline[*].action 안에는 반드시 '말하고 있는 동작'을 포함해야 합니다.
 
-예: 
-"speaking softly", 
-"mouth moving naturally while talking", 
-"subtle talking motion", 
-"talking while smiling" 
+예:
+"speaking softly",
+"mouth moving naturally while talking",
+"subtle talking motion",
+"talking while smiling"
 
-voice_over는 단순 내레이션이 아니라, 
+voice_over는 단순 내레이션이 아니라,
 인물이 직접 말하고 있는 경우라면 반드시 스타일을 반영해 주세요.
 
 즉, voice_over가 있을 경우:
@@ -221,7 +224,7 @@ with st.sidebar:
         "- 이 화면에서는 별도의 키 입력이 필요 없습니다."
     )
     st.markdown("---")
-    st.markdown("**사용 모델:** `gpt-4.1-mini` (원하면 코드에서 변경 가능)")
+    st.markdown("**사용 모델:** `gpt-4.1-mini` (텍스트 전용, 이미지 모드는 아래에서 별도 모델 사용)")
 
 st.markdown("## 1) 기본 정보")
 
@@ -239,6 +242,8 @@ with st.container():
     with c3:
         duration = st.number_input("길이(초)", min_value=3, max_value=60, value=8, step=1)
 
+# 🔹 prompt_name 누락 방지용 (기본 정보 바로 아래에 배치)
+prompt_name = st.text_input("프롬프트 이름 (내가 구분용으로 쓸 제목)", value="카페 테라스 작업 씬")
 
 st.markdown("---")
 st.markdown("## 2) 인물 / 캐릭터 / 액션")
@@ -339,16 +344,16 @@ extra = st.text_area(
     placeholder="예: 손에 머그컵 들고 있음, 바람에 머리카락이 살짝 흩날림, 브랜딩 컬러를 배경에 살짝 반영 등"
 )
 
-generate_btn = st.button("🚀 프롬프트 생성하기")
+generate_btn = st.button("🚀 프롬프트 생성하기 (텍스트 기반)")
 
 # ==============================================================================
-# [3] OpenAI 호출 함수
+# [3] OpenAI 호출 함수 (텍스트 기반)
 # ==============================================================================
 def ask_openai(prompt: str) -> str:
     client = OpenAI(api_key=OPENAI_API_KEY)
 
     response = client.chat.completions.create(
-        model = "gpt-4.1-mini",  # 필요하면 gpt-4.1 / gpt-4.1-mini 등으로 변경 가능
+        model="gpt-4.1-mini",  # 필요하면 gpt-4.1 / gpt-4.1-mini 등으로 변경 가능
         messages=[
             {"role": "system", "content": SYSTEM_INSTRUCTION},
             {"role": "user", "content": prompt},
@@ -359,13 +364,54 @@ def ask_openai(prompt: str) -> str:
 
 
 # ==============================================================================
-# [4] 생성 로직
+# [4] OpenAI 호출 함수 (이미지 기반)
+# ==============================================================================
+def ask_openai_with_image(image_bytes: bytes) -> str:
+    """
+    업로드된 이미지를 기반으로, 현재 SYSTEM_INSTRUCTION에 맞는
+    ComfyUI JSON + Midjourney 프롬프트를 생성.
+    """
+    client = OpenAI(api_key=OPENAI_API_KEY)
+
+    b64_image = base64.b64encode(image_bytes).decode("utf-8")
+
+    user_content = [
+        {
+            "type": "text",
+            "text": (
+                "다음 이미지를 분석해서, 위에서 설명한 SYSTEM_INSTRUCTION과 JSON 템플릿 형식에 맞춰 "
+                "ComfyUI JSON 프롬프트와 Midjourney용 한 줄 프롬프트를 생성해 주세요. "
+                "이미지 속 인물, 배경, 조명, 카메라 구도, 분위기를 최대한 정확하게 분석해서 채우고, "
+                "timeline과 audio 섹션은 이 이미지에서 자연스럽게 유추되는 약 6~10초 길이의 시퀀스로 구성해 주세요."
+            ),
+        },
+        {
+            "type": "image_url",
+            "image_url": {
+                "url": f"data:image/png;base64,{b64_image}"
+            },
+        },
+    ]
+
+    response = client.chat.completions.create(
+        # ⚠️ 이미지 지원되는 모델로 교체 필요할 수 있음 (예: gpt-4o, gpt-4.1 등)
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": SYSTEM_INSTRUCTION},
+            {"role": "user", "content": user_content},
+        ],
+        temperature=0.3,
+    )
+    return response.choices[0].message.content
+
+
+# ==============================================================================
+# [5] 텍스트 기반 생성 로직
 # ==============================================================================
 if generate_btn:
     if not OPENAI_API_KEY:
         st.error("OPENAI_API_KEY가 설정되지 않았습니다. Secrets에 'openai_api_key'를 등록해 주세요.")
     else:
-        # 1) 세분화된 입력들을 하나의 텍스트로 합치기
         combined_prompt = f"""
 [브랜드/프로젝트]
 {brand}
@@ -405,7 +451,6 @@ if generate_btn:
 {composition}
 
 [오디오 / 사운드]
-{composition}
 - BGM: {audio_bgm}
 - SFX: {audio_sfx}
 - Voice / Narration: {audio_voice}
@@ -425,24 +470,21 @@ if generate_btn:
 
             st.success("프롬프트 생성 완료!")
 
-            # 🔹 왼쪽: 전체 결과
             left, right = st.columns(2)
 
             with left:
                 st.markdown("### 🧩 전체 결과 (Markdown)")
                 st.markdown(result_text)
 
-            # 🔹 오른쪽: 미드저니 프롬프트만 코드박스로
             with right:
                 st.markdown("### 🎨 Midjourney 프롬프트 (코드 복사용)")
 
                 text = result_text
 
-                # 1) 미드저니 섹션 시작 마커들
                 start_markers = [
                     "2️⃣ 미드저니 사용 프롬프트",
                     "### 2️⃣ 미드저니 사용 프롬프트",
-                    "미드저니 사용 프롬프트"
+                    "미드저니 사용 프롬프트",
                 ]
 
                 start_index = -1
@@ -455,16 +497,9 @@ if generate_btn:
                     st.info("미드저니 프롬프트 구간을 찾을 수 없습니다.")
                     st.code(result_text, language="text")
                 else:
-                    # 2) 시작 지점 이후 텍스트만 남기기
                     mj = text[start_index:].strip()
 
-                    # 3) 끝 마커들(누락 리스트/다음 섹션) 전에 자르기
-                    end_markers = [
-                        "⚠️",   # 누락 리스트 시작
-                        "###",  # 새로운 섹션
-                        "1️⃣",
-                        "3️⃣"
-                    ]
+                    end_markers = ["⚠️", "###", "1️⃣", "3️⃣"]
                     end_index = len(mj)
                     for end in end_markers:
                         if end in mj:
@@ -472,8 +507,6 @@ if generate_btn:
                             end_index = min(end_index, pos)
 
                     mj = mj[:end_index].strip()
-
-                    # 4) 백틱 제거 + 제목 줄 제거
                     mj = mj.replace("```", "").strip()
 
                     lines = mj.splitlines()
@@ -482,12 +515,95 @@ if generate_btn:
                         if ("프롬프트" in first_line) or ("Prompt" in first_line):
                             mj = "\n".join(lines[1:]).strip()
 
-                    # 🔥 최종 Midjourney 프롬프트만 출력
                     st.code(mj, language="text")
 
         except Exception as e:
             st.error(f"실행 중 오류가 발생했습니다: {e}")
 
+
+# ==============================================================================
+# [6] 이미지 업로드 → JSON/MJ 생성 기능
+# ==============================================================================
+st.markdown("---")
+st.markdown("## 7) 이미지에서 프롬프트 / JSON 생성하기 (옵션)")
+
+image_file = st.file_uploader(
+    "참고용 이미지 업로드 (jpg, jpeg, png)",
+    type=["jpg", "jpeg", "png"],
+    accept_multiple_files=False,
+    help="레퍼런스 이미지 한 장만 업로드해 주세요."
+)
+
+generate_from_image_btn = st.button("🖼 이미지로부터 프롬프트 생성하기")
+
+if generate_from_image_btn:
+    if not OPENAI_API_KEY:
+        st.error("OPENAI_API_KEY가 설정되지 않았습니다. Secrets에 'openai_api_key'를 등록해 주세요.")
+    elif image_file is None:
+        st.error("먼저 이미지를 업로드해 주세요.")
+    else:
+        try:
+            image_bytes = image_file.read()
+
+            with st.spinner("이미지를 분석하여 JSON + 프롬프트를 생성하는 중입니다..."):
+                result_text = ask_openai_with_image(image_bytes)
+
+            st.success("이미지 기반 프롬프트 생성 완료!")
+
+            left, right = st.columns(2)
+
+            with left:
+                st.markdown("### 🧩 전체 결과 (이미지 기반 / Markdown)")
+                st.markdown(result_text)
+
+            with right:
+                st.markdown("### 🎨 Midjourney 프롬프트 (코드 복사용)")
+
+            # MJ 추출 로직 재사용
+                text = result_text
+
+                start_markers = [
+                    "2️⃣ 미드저니 사용 프롬프트",
+                    "### 2️⃣ 미드저니 사용 프롬프트",
+                    "미드저니 사용 프롬프트",
+                ]
+
+                start_index = -1
+                for marker in start_markers:
+                    if marker in text:
+                        start_index = text.index(marker) + len(marker)
+                        break
+
+                if start_index == -1:
+                    st.info("미드저니 프롬프트 구간을 찾을 수 없습니다.")
+                    st.code(result_text, language="text")
+                else:
+                    mj = text[start_index:].strip()
+
+                    end_markers = ["⚠️", "###", "1️⃣", "3️⃣"]
+                    end_index = len(mj)
+                    for end in end_markers:
+                        if end in mj:
+                            pos = mj.index(end)
+                            end_index = min(end_index, pos)
+
+                    mj = mj[:end_index].strip()
+                    mj = mj.replace("```", "").strip()
+
+                    lines = mj.splitlines()
+                    if len(lines) > 1:
+                        first_line = lines[0]
+                        if ("프롬프트" in first_line) or ("Prompt" in first_line):
+                            mj = "\n".join(lines[1:]).strip()
+
+                    st.code(mj, language="text")
+
+        except Exception as e:
+            st.error(f"이미지 기반 생성 중 오류가 발생했습니다: {e}")
+
+# ==============================================================================
+# [Footer]
+# ==============================================================================
 st.markdown(
     """
     <hr>
