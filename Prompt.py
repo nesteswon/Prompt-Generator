@@ -246,7 +246,75 @@ if generate_btn:
     else:
         try:
             with st.spinner("OpenAI가 프롬프트를 생성하는 중입니다..."):
-                result_text = ask_openai(user_input)
+                if generate_btn:
+    if not OPENAI_API_KEY:
+        st.error("OPENAI_API_KEY가 설정되지 않았습니다. Secrets에 'openai_api_key'를 등록해 주세요.")
+    else:
+        # 1) 세분화된 입력들을 하나의 텍스트로 합치기
+        combined_prompt = f"""
+[브랜드/프로젝트]
+{brand}
+
+[프롬프트 이름]
+{prompt_name}
+
+[영상 정보]
+- Aspect Ratio: {aspect}
+- Duration: {duration}초
+
+[주제 / 메인 인물]
+{subject}
+
+[캐릭터 디테일]
+{character_detail}
+
+[액션 / 행동]
+{action}
+
+[감정 / 분위기]
+{emotion}
+
+[배경 / 장소]
+{background}
+
+[조명 / 분위기]
+{lighting}
+
+[카메라 움직임 / 샷 타입]
+{camera_move}
+
+[스타일]
+{style}
+
+[구도]
+{composition}
+
+[추가 메모]
+{extra}
+""".strip()
+
+        try:
+            with st.spinner("OpenAI가 프롬프트를 생성하는 중입니다..."):
+                result_text = ask_openai(combined_prompt)
+
+            st.success("프롬프트 생성 완료!")
+
+            # 여기 아래는 기존 결과 표시 부분 (왼쪽 전체 결과 / 오른쪽 MJ 프롬프트 코드박스)
+            # 이미 가지고 있는 코드 그대로 두고, result_text만 사용하면 됨.
+            left, right = st.columns(2)
+
+            with left:
+                st.markdown("### 🧩 전체 결과 (Markdown)")
+                st.markdown(result_text)
+
+            with right:
+                st.markdown("### 🎨 Midjourney 프롬프트 (코드 복사용)")
+                # 👉 여기에 우리가 만든 MJ 추출 로직(st.code) 넣으면 됨
+                # (지금까지 쓰던 그대로)
+                st.code(result_text, language="text")  # 일단은 전체를 코드박스로
+
+        except Exception as e:
+            st.error(f"실행 중 오류가 발생했습니다: {e}")
 
             st.success("프롬프트 생성 완료!")
 
