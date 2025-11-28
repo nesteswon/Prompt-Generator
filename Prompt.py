@@ -38,6 +38,15 @@ SYSTEM_INSTRUCTION = """
 - "camera_work" 섹션은 전체 영상에 공통으로 적용되는 렌즈, 전역적인 카메라 스타일, 효과 정도만 간단히 채우세요.
   - 씬별 카메라 움직임, 샷 타입, 구체적인 화면 설명은 모두 "timeline" 배열의 "action" 텍스트 안에 포함합니다.
 - 카메라, 렌즈, 조명 등은 설명이 없을 때는 당신이 장면에 어울리는 값을 "추천"해서 채우고, 정말 결정하기 어려운 경우에만 "none"을 사용하세요.
+※ 중요 규칙: 카메라 움직임, 샷 타입, 앵글, 화면 묘사 등 모든 카메라 관련 구체 정보는 반드시 timeline[*].action 내부 문장으로만 표현해야 합니다. 
+camera_work.notes 또는 camera_work.effects 안에는 절대로 구체적인 카메라 움직임(dolly, zoom, pan, tilt), 샷 타입(wide, medium, close-up), 앵글(high-angle, low-angle) 정보를 넣지 마세요.
+
+camera_work 섹션에는 아래와 같은 "전역적인 설정"만 포함해야 합니다:
+- 전체 영상에 공통으로 사용되는 렌즈 정보 (예: 35mm, 50mm 등)
+- 전체 영상에 공통으로 적용되는 색보정/효과 (예: soft bloom, cinematic grading)
+- 전체적인 카메라 톤 (예: overall cinematic tone)
+
+모든 장면별 카메라 동작, 샷 구성, 화면 내용은 timeline[*].action 문장 안에 포함하세요.
 
 [조건 2: 누락 데이터 처리]
 - 입력 내용에서 찾을 수 없는 정보는 "none"이라고 기입하세요.
