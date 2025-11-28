@@ -208,7 +208,51 @@ with col6:
     )
 
 st.markdown("---")
-st.markdown("## 4) 추가 메모")
+st.markdown("## 4) 오디오 / 사운드")
+
+col_a1, col_a2 = st.columns(2)
+with col_a1:
+    audio_bgm = st.text_input(
+        "배경 음악 (BGM)",
+        value="warm lo-fi beat, soft piano, medium tempo",
+        help="음악 장르, 분위기, 템포 등을 적어주세요."
+    )
+    audio_sfx = st.text_area(
+        "효과음 (SFX)",
+        height=80,
+        value="카페 사람들 소음, 잔잔한 대화 소리, 컵 부딪히는 소리",
+        help="현장감 있는 소리, 환경음 등을 적어주세요."
+    )
+
+with col_a2:
+    audio_voice = st.text_area(
+        "내레이션 / 대사 (선택)",
+        height=120,
+        placeholder="예: 그녀의 내레이션, 브랜드 메시지, 짧은 카피 문구 등"
+    )
+
+st.markdown("---")
+st.markdown("## 5) 타임라인 / 씬 분할")
+
+timeline_overview = st.text_input(
+    "타임라인 요약",
+    value="총 8초, 3개의 주요 구간으로 구성",
+    help="전체 길이와 씬 분할 개수 정도를 간단히 적어주세요."
+)
+
+timeline_detail = st.text_area(
+    "씬별 타임라인 (초 단위로 적어도 좋아요)",
+    height=140,
+    value=(
+        "0-3초: 카페 전경, 테라스와 도시 배경을 보여주는 와이드 샷\n"
+        "3-6초: 노트북으로 작업 중인 인물을 중심으로 미디엄 샷, 화면에 집중하는 표정\n"
+        "6-8초: 살짝 카메라가 줌인되며 창밖을 보며 미소 짓는 클로즈업"
+    ),
+    help="0-3초 / 3-6초 처럼 시간대별로 어떤 장면이 나오는지 적어주세요."
+)
+
+st.markdown("---")
+st.markdown("## 6) 추가 메모")
 
 extra = st.text_area(
     "추가로 반영되면 좋은 요소들 (선택)",
