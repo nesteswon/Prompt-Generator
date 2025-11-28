@@ -246,7 +246,7 @@ if generate_btn:
     else:
         try:
             with st.spinner("OpenAI가 프롬프트를 생성하는 중입니다..."):
-                if generate_btn:
+if generate_btn:
     if not OPENAI_API_KEY:
         st.error("OPENAI_API_KEY가 설정되지 않았습니다. Secrets에 'openai_api_key'를 등록해 주세요.")
     else:
