@@ -38,8 +38,25 @@ SYSTEM_INSTRUCTION = """
 - "camera_work" 섹션은 전체 영상에 공통으로 적용되는 렌즈, 전역적인 카메라 스타일, 효과 정도만 간단히 채우세요.
   - 씬별 카메라 움직임, 샷 타입, 구체적인 화면 설명은 모두 "timeline" 배열의 "action" 텍스트 안에 포함합니다.
 - 카메라, 렌즈, 조명 등은 설명이 없을 때는 당신이 장면에 어울리는 값을 "추천"해서 채우고, 정말 결정하기 어려운 경우에만 "none"을 사용하세요.
-※ 중요 규칙: 카메라 움직임, 샷 타입, 앵글, 화면 묘사 등 모든 카메라 관련 구체 정보는 반드시 timeline[*].action 내부 문장으로만 표현해야 합니다. 
+※ 중요 규칙: 
+- 카메라 움직임, 샷 타입, 앵글, 화면 묘사 등 모든 카메라 관련 구체 정보는 반드시 timeline[*].action 내부 문장으로만 표현해야 합니다. 
 camera_work.notes 또는 camera_work.effects 안에는 절대로 구체적인 카메라 움직임(dolly, zoom, pan, tilt), 샷 타입(wide, medium, close-up), 앵글(high-angle, low-angle) 정보를 넣지 마세요.
+※ Voice Over 관련 중요 규칙:
+- 만약 사용자가 voice_over 또는 대사(말한 문장)를 제공한 경우,
+timeline[*].action 안에는 반드시 '말하고 있는 동작'을 포함해야 합니다.
+
+예: 
+"speaking softly", 
+"mouth moving naturally while talking", 
+"subtle talking motion", 
+"talking while smiling" 
+
+voice_over는 단순 내레이션이 아니라, 
+인물이 직접 말하고 있는 경우라면 반드시 스타일을 반영해 주세요.
+
+즉, voice_over가 있을 경우:
+- timeline[*].action 문장 안에 'speaking' 관련 묘사를 추가해야 합니다.
+- 해당 컷에서 인물이 말하고 있는 모습이 시각적으로 묘사되도록 작성하세요.
 
 camera_work 섹션에는 아래와 같은 "전역적인 설정"만 포함해야 합니다:
 - 전체 영상에 공통으로 사용되는 렌즈 정보 (예: 35mm, 50mm 등)
