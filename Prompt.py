@@ -1,9 +1,9 @@
 import streamlit as st
 from openai import OpenAI
-import base64
 
 # 🔐 Streamlit Secrets 에서 OpenAI API Key 가져오기
 OPENAI_API_KEY = st.secrets["openai_api_key"]
+
 # ✅ 기본값 상수 (리셋 시 여기에 적힌 값으로 돌아감)
 DEFAULT_BRAND = "니코모리"
 DEFAULT_ASPECT = "16:9"
@@ -32,6 +32,7 @@ DEFAULT_TIMELINE_DETAIL = (
 )
 DEFAULT_EXTRA = ""
 DEFAULT_PROMPT_NAME = "카페 테라스 작업 씬"
+
 # ==============================================================================
 # [1] System Instruction 설정 (역할 + 규칙)
 # ==============================================================================
@@ -173,7 +174,7 @@ camera_work 섹션에는 아래와 같은 "전역적인 설정"만 포함해야 
       "___"
     ],
     "weather": "___",
-    "scene_lighting": "___"
+      "scene_lighting": "___"
   },
   "camera_work": {
     "lens": "___",
@@ -239,50 +240,6 @@ Topic, Action, Background, Camera movement, Style, Composition
 # ==============================================================================
 # [2] Streamlit UI
 # ==============================================================================
-import streamlit as st
-from openai import OpenAI
-import base64
-
-# 🔐 Streamlit Secrets 에서 OpenAI API Key 가져오기
-OPENAI_API_KEY = st.secrets["openai_api_key"]
-
-# ✅ 기본값 상수 (리셋 시 여기에 적힌 값으로 돌아감)
-DEFAULT_BRAND = "니코모리"
-DEFAULT_ASPECT = "16:9"
-DEFAULT_DURATION = 8
-
-DEFAULT_SUBJECT = "밝게 미소 짓는 20대 한국인 여성"
-DEFAULT_CHARACTER_DETAIL = "긴 생머리, 깔끔한 셔츠와 데님, 자연스러운 메이크업"
-DEFAULT_ACTION = "카페 테라스에서 노트북으로 작업하며, 가끔 창밖을 보며 미소 짓는다"
-DEFAULT_EMOTION = "집중 + 여유 + 작은 설렘"
-
-DEFAULT_BACKGROUND = "햇살이 들어오는 도심 카페 테라스, 주변에 화분과 나무, 뒤로 흐릿한 도시 풍경"
-DEFAULT_LIGHTING = "golden hour, soft natural light"
-DEFAULT_CAMERA_MOVE = "slow dolly-in, medium shot, 약간 높은 앵글"
-DEFAULT_STYLE = "cinematic, realistic, soft color grading"
-DEFAULT_COMPOSITION = "rule of thirds, subject slightly off-center"
-
-DEFAULT_BGM = "warm lo-fi beat, soft piano, medium tempo"
-DEFAULT_SFX = "카페 사람들 소음, 잔잔한 대화 소리, 컵 부딪히는 소리"
-DEFAULT_VOICE = ""
-
-DEFAULT_TIMELINE_OVERVIEW = "총 8초, 3개의 주요 구간으로 구성"
-DEFAULT_TIMELINE_DETAIL = (
-    "0-3초: 카페 전경, 테라스와 도시 배경을 보여주는 와이드 샷\n"
-    "3-6초: 노트북으로 작업 중인 인물을 중심으로 미디엄 샷, 화면에 집중하는 표정\n"
-    "6-8초: 살짝 카메라가 줌인되며 창밖을 보며 미소 짓는 클로즈업"
-)
-DEFAULT_EXTRA = ""
-DEFAULT_PROMPT_NAME = "카페 테라스 작업 씬"
-
-# =====================================================================
-# SYSTEM_INSTRUCTION (네가 올린 그대로 사용, 생략하지 말고 위에서 쓰던 것 넣어두면 됨)
-# =====================================================================
-SYSTEM_INSTRUCTION = """...여기에는 네가 위에 써둔 SYSTEM_INSTRUCTION 그대로..."""
-
-# ==============================================================================
-# [2] Streamlit UI
-# ==============================================================================
 st.set_page_config(page_title="ComfyUI + Midjourney Prompt Converter (GPT)", layout="wide")
 
 st.title("ComfyUI JSON + Midjourney 프롬프트 변환기 (OpenAI 전용)")
@@ -295,7 +252,7 @@ with st.sidebar:
         "- 이 화면에서는 별도의 키 입력이 필요 없습니다."
     )
     st.markdown("---")
-    st.markdown("**사용 모델:** `gpt-4.1-mini` (텍스트 전용, 이미지 모드는 아래에서 별도 모델 사용)")
+    st.markdown("**사용 모델:** `gpt-4.1-mini` (텍스트 전용)")
 
 # ======================
 # 1) 기본 정보 + 리셋
@@ -558,49 +515,7 @@ def ask_openai(prompt: str) -> str:
 
 
 # ==============================================================================
-# [4] OpenAI 호출 함수 (이미지 기반)
-# ==============================================================================
-def ask_openai_with_image(image_bytes: bytes) -> str:
-    """
-    업로드된 이미지를 기반으로, 현재 SYSTEM_INSTRUCTION에 맞는
-    ComfyUI JSON + Midjourney 프롬프트를 생성.
-    """
-    client = OpenAI(api_key=OPENAI_API_KEY)
-
-    b64_image = base64.b64encode(image_bytes).decode("utf-8")
-
-    user_content = [
-        {
-            "type": "text",
-            "text": (
-                "다음 이미지를 분석해서, 위에서 설명한 SYSTEM_INSTRUCTION과 JSON 템플릿 형식에 맞춰 "
-                "ComfyUI JSON 프롬프트와 Midjourney용 한 줄 프롬프트를 생성해 주세요. "
-                "이미지 속 인물, 배경, 조명, 카메라 구도, 분위기를 최대한 정확하게 분석해서 채우고, "
-                "timeline과 audio 섹션은 이 이미지에서 자연스럽게 유추되는 약 6~10초 길이의 시퀀스로 구성해 주세요."
-            ),
-        },
-        {
-            "type": "image_url",
-            "image_url": {
-                "url": f"data:image/png;base64,{b64_image}"
-            },
-        },
-    ]
-
-    response = client.chat.completions.create(
-        # ⚠️ 이미지 지원되는 모델로 교체 필요할 수 있음 (예: gpt-4o, gpt-4.1 등)
-        model="gpt-4o",
-        messages=[
-            {"role": "system", "content": SYSTEM_INSTRUCTION},
-            {"role": "user", "content": user_content},
-        ],
-        temperature=0.3,
-    )
-    return response.choices[0].message.content
-
-
-# ==============================================================================
-# [5] 텍스트 기반 생성 로직
+# [4] 텍스트 기반 생성 로직
 # ==============================================================================
 if generate_btn:
     if not OPENAI_API_KEY:
@@ -713,87 +628,6 @@ if generate_btn:
 
         except Exception as e:
             st.error(f"실행 중 오류가 발생했습니다: {e}")
-
-
-# ==============================================================================
-# [6] 이미지 업로드 → JSON/MJ 생성 기능
-# ==============================================================================
-st.markdown("---")
-st.markdown("## 7) 이미지에서 프롬프트 / JSON 생성하기 (옵션)")
-
-image_file = st.file_uploader(
-    "참고용 이미지 업로드 (jpg, jpeg, png)",
-    type=["jpg", "jpeg", "png"],
-    accept_multiple_files=False,
-    help="레퍼런스 이미지 한 장만 업로드해 주세요."
-)
-
-generate_from_image_btn = st.button("🖼 이미지로부터 프롬프트 생성하기")
-
-if generate_from_image_btn:
-    if not OPENAI_API_KEY:
-        st.error("OPENAI_API_KEY가 설정되지 않았습니다. Secrets에 'openai_api_key'를 등록해 주세요.")
-    elif image_file is None:
-        st.error("먼저 이미지를 업로드해 주세요.")
-    else:
-        try:
-            image_bytes = image_file.read()
-
-            with st.spinner("이미지를 분석하여 JSON + 프롬프트를 생성하는 중입니다..."):
-                result_text = ask_openai_with_image(image_bytes)
-
-            st.success("이미지 기반 프롬프트 생성 완료!")
-
-            left, right = st.columns(2)
-
-            with left:
-                st.markdown("### 🧩 전체 결과 (이미지 기반 / Markdown)")
-                st.markdown(result_text)
-
-            with right:
-                st.markdown("### 🎨 Midjourney 프롬프트 (코드 복사용)")
-
-            # MJ 추출 로직 재사용
-                text = result_text
-
-                start_markers = [
-                    "2️⃣ 미드저니 사용 프롬프트",
-                    "### 2️⃣ 미드저니 사용 프롬프트",
-                    "미드저니 사용 프롬프트",
-                ]
-
-                start_index = -1
-                for marker in start_markers:
-                    if marker in text:
-                        start_index = text.index(marker) + len(marker)
-                        break
-
-                if start_index == -1:
-                    st.info("미드저니 프롬프트 구간을 찾을 수 없습니다.")
-                    st.code(result_text, language="text")
-                else:
-                    mj = text[start_index:].strip()
-
-                    end_markers = ["⚠️", "###", "1️⃣", "3️⃣"]
-                    end_index = len(mj)
-                    for end in end_markers:
-                        if end in mj:
-                            pos = mj.index(end)
-                            end_index = min(end_index, pos)
-
-                    mj = mj[:end_index].strip()
-                    mj = mj.replace("```", "").strip()
-
-                    lines = mj.splitlines()
-                    if len(lines) > 1:
-                        first_line = lines[0]
-                        if ("프롬프트" in first_line) or ("Prompt" in first_line):
-                            mj = "\n".join(lines[1:]).strip()
-
-                    st.code(mj, language="text")
-
-        except Exception as e:
-            st.error(f"이미지 기반 생성 중 오류가 발생했습니다: {e}")
 
 # ==============================================================================
 # [Footer]
